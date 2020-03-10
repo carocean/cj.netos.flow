@@ -1,0 +1,80 @@
+{
+  entryPoint: {
+    plugins: [
+      {
+        name: "mongodb",
+        class: "cj.studio.orm.mongodb.MongoDBPlugin",
+        parameters: {
+          remotes: "[
+          '172.31.210.92:27017'
+        ]
+          "
+        }
+      }
+    ],
+    activators: [
+      {
+        name: '开放口服务活动器',
+        class: 'cj.studio.openport.OpenportEntryPointActivator',
+        parameters: {
+          "publicAPIPath": '/portsapi',
+          checkAppSignStrategy: '',
+          checkAccessTokenStrategy: 'cj.netos.flow.program.CheckAccessTokenStrategy'
+        }
+      }
+    ]
+  },
+  assemblyInfo: {
+    assemblyTitle: "document",
+    assemblyResource: "site=/site;http.root=$(site)/web;http.jss=$(site)/jss/http;ws.jss=$(site)/jss/ws",
+    assemblyDescription: "文档中心",
+    assemblyConfiguration: "",
+    assemblyCompany: "cj工作室出品，lns平台制造",
+    assemblyProduct: "cj.netos.flow",
+    assemblyCopyright: "Copyright   2011",
+    assemblyTrademark: "",
+    assemblyCulture: "",
+    guid: "4B2E9412-10CE-4C31-ACE2-2CC47C14197E",
+    assemblyVersion: "1.0.0.0",
+    assemblyFileVersion: "1.0.0.0"
+  },
+  global: {
+    default: "zh_CN",
+    desc: "如果系统环境要求各芯片采用的语言本芯片没有，则芯片可采用默认语言"
+  },
+  serviceContainer: {
+    name: "netContainer",
+    switchFilter: "off",
+    monitor: "",
+    jss: [
+      {
+        module: "services1",
+        package: "cj.netos.flow.jss",
+        unzip: "true",
+        searchMode: "link",
+        extName: ".jss.js"
+      }
+    ],
+    scans: [
+      {
+        package: "cj.netos.flow.program",
+        extName: ".class|.json|.xml",
+        exoterical: "true"
+      },
+      {
+        package: "cj.netos.flow.services",
+        extName: ".class|.json|.xml",
+        exoterical: "true"
+      },
+      {
+        package: "cj.netos.flow.ports",
+        extName: ".class|.json|.xml",
+        exoterical: "true"
+      },{
+			package: "cj.netos.flow.jobs",
+			extName: ".class|.json|.xml",
+			exoterical: "true"
+		}
+    ]
+  }
+}

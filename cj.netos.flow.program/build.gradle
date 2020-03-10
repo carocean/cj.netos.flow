@@ -1,0 +1,56 @@
+sourceSets {
+    main {
+        java {
+            srcDir "$projectDir/src"
+        }
+        resources {
+            srcDir "$projectDir/site-src"
+        }
+    }
+}
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+repositories {
+}
+
+dependencies {
+    compile group: 'cj.netos.openport', name: 'cj.studio.openport', version: ref_cj_studio_openport_version
+    compile group: 'cj.studio.gateway2', name: 'cj.studio.orm.mongodb', version: ref_cj_studio_orm_mongodb
+    compile group: 'cj.netos.network', name: 'cj.netos.network.peer', version: ref_netos_network_peer_version
+    compile group: 'org.mongodb', name: 'mongodb-driver', version: '3.12.1'
+    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.3.1'
+    compile group: 'com.baidu', name: 'leansoft-bigqueue', version: '0.7.3'
+    implementation project(':cj.netos.flow.openports')
+}
+task copyRefembeds(type: Copy) {
+    from configurations.compileClasspath.files {
+        include 'cj.studio.orm.mongodb-*.jar'
+    }
+    into 'src/cj/refembeds'
+}
+task copyReferences(type: Copy) {
+    from configurations.compileClasspath.files {
+        include 'cj.netos.flow.openports-*.jar', 'cj.lns.chip.sos.cube-*.jar', 'mongodb-driver-*.jar',
+                'bson-*.jar', 'cj.studio.openport-*.jar','okhttp-*.jar','leansoft-bigqueue-*.jar','guava-*.jar',
+                'cj.netos.network.peer-*.jar','cj.netos.network.corelib-*.jar'
+    }
+    into 'src/cj/references'
+}
+build.dependsOn('copyReferences')
+build.dependsOn('copyRefembeds')
+build.dependsOn(":cj.netos.flow.openports:release")
+
+task releaseToHost(dependsOn: copyReferences, type: Copy) {
+    dependsOn "build"
+    from 'build/libs/'
+    into '../cmdtools/gateway/assemblies/flow'
+    include '**/*.jar'
+    exclude '**/*-javadoc.jar', '**/*-sources.jar'
+}
+
+task release(type: Copy) {
+    dependsOn "releaseToHost"
+}
