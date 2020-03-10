@@ -109,11 +109,14 @@ public class DefaultNetworkNodeService implements INetworkNodeService {
         logger.setLog(new HashMap<>());
         home.saveDoc(_KEY_LOG_NAME, new TupleDocument<>(logger));
 
+        updateState(peerName,true);
+    }
+    @Override
+    public void updateState(String peerName, boolean isOpened) {
         Document filter = Document.parse(String.format("{'tuple.peerName':'%s'}", peerName));
-        Document update = Document.parse(String.format("{'$set':{'tuple.isOpened':true}}"));
+        Document update = Document.parse(String.format("{'$set':{'tuple.isOpened':%s}}",isOpened));
         home.updateDocOne(_KEY_COL_NAME, filter, update);
     }
-
     @Override
     public void onclose(String peerName) {
         PeerLogger logger = new PeerLogger();

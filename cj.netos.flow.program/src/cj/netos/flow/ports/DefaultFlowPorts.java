@@ -141,14 +141,6 @@ public class DefaultFlowPorts implements IFlowPorts {
     }
 
     private void _connectNetworkNode(String peerName, String networkName, String url, String operator, String password) {
-        PeerEvent event = new PeerEvent(peerName, networkName, url, this.networks, this.peers, this.networkNodeService);
-        IPeer peer = Peer.connect(url, event, event, event, event);
-        peer.authByPassword(peerName, operator, password);
-
-        ILogicNetwork logicNetwork = peer.listen(networkName, false, ListenMode.upstream);
-        networks.put(peerName, logicNetwork);
-        peers.put(peerName, peer);
-
         NetworkNode node = networkNodeService.get(peerName);
         if (node != null) {
             if (!node.getNetworkName().equals(networkName)) {
@@ -163,11 +155,18 @@ public class DefaultFlowPorts implements IFlowPorts {
             if (!node.getPassword().equals(password)) {
                 networkNodeService.updatePassword(peerName, password);
             }
-            peer.viewServer();
-            return;
+        }else {
+            node = new NetworkNode(peerName, networkName, url, operator, password);
+            networkNodeService.save(node);
         }
-        node = new NetworkNode(peerName, networkName, url, operator, password);
-        networkNodeService.save(node);
+
+        PeerEvent event = new PeerEvent(peerName, networkName, url, this.networks, this.peers, this.networkNodeService);
+        IPeer peer = Peer.connect(url, event, event, event, event);
+        peer.authByPassword(peerName, operator, password);
+
+        ILogicNetwork logicNetwork = peer.listen(networkName, false, ListenMode.upstream);
+        networks.put(peerName, logicNetwork);
+        peers.put(peerName, peer);
         peer.viewServer();
     }
 

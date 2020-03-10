@@ -19,6 +19,8 @@ public interface INetworkNodeService {
 
     void onopen(String peerName);
 
+    void updateState(String peerName, boolean isOpened);
+
     void onclose(String peerName);
 
     void onreconnect(String peerName);
