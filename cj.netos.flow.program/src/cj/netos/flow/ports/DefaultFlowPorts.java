@@ -155,7 +155,7 @@ public class DefaultFlowPorts implements IFlowPorts {
             if (!node.getPassword().equals(password)) {
                 networkNodeService.updatePassword(peerName, password);
             }
-        }else {
+        } else {
             node = new NetworkNode(peerName, networkName, url, operator, password);
             networkNodeService.save(node);
         }
@@ -176,11 +176,19 @@ public class DefaultFlowPorts implements IFlowPorts {
         checkRuning();
         ILogicNetwork network = networks.get(peerName);
         if (network != null) {
-            network.leave();
+            try {
+                network.leave();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         IPeer peer = peers.get(peerName);
         if (peer != null) {
-            peer.close();
+            try {
+                peer.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         if (isRemove) {
             networkNodeService.remove(peerName);
