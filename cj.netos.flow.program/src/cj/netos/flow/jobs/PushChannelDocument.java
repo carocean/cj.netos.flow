@@ -23,6 +23,7 @@ public class PushChannelDocument implements IFlowJob {
         String creator = (String) e.parameter("creator");
         String channel = (String) e.parameter("channel");
         String docid = (String) e.parameter("docid");
+        String sender = (String) e.parameter("sender");
 
         ChannelDocument doc = this.channel.getDocument(creator, channel, docid);
         if (doc == null) {
@@ -35,15 +36,15 @@ public class PushChannelDocument implements IFlowJob {
         frame.parameter("docid", docid);
         frame.parameter("channel", channel);
         frame.parameter("creator",creator);
+        frame.head("sender", sender);
         long limit = 100;
         long skip = 0;
         while (true) {
-            List<String> outputPersons = this.channel.findOutputPersons(creator, channel, limit, skip);
+            List<String> outputPersons = this.channel.findOutputPersons(sender, channel, limit, skip);
             if (outputPersons.isEmpty()) {
                 break;
             }
             skip += outputPersons.size();
-            frame.head("sender", creator);
             for (String person : outputPersons) {
                 frame.head("to-person", person);
                 broadcast.broadcast(frame.copy());

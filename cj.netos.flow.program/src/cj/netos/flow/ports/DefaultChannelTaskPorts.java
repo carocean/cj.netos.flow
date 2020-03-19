@@ -1,10 +1,9 @@
 package cj.netos.flow.ports;
 
-import cj.netos.flow.openports.entities.ChannelDocumentMedia;
 import cj.netos.flow.EventTask;
 import cj.netos.flow.ITaskQueue;
+import cj.netos.flow.openports.entities.ChannelDocumentMedia;
 import cj.netos.flow.openports.ports.IChannelTaskPorts;
-import cj.studio.ecm.CJSystem;
 import cj.studio.ecm.annotation.CjService;
 import cj.studio.ecm.annotation.CjServiceRef;
 import cj.studio.ecm.net.CircuitException;
@@ -21,6 +20,17 @@ public class DefaultChannelTaskPorts implements IChannelTaskPorts {
         task.parameter("creator", securitySession.principal());
         task.parameter("channel", channel);
         task.parameter("docid", docid);
+        task.parameter("sender", securitySession.principal());
+        queue.append(task);
+    }
+
+    @Override
+    public void pushChannelDocumentOfPerson(ISecuritySession securitySession, String channel, String docid, String creator, long interval) throws CircuitException {
+        EventTask task = new EventTask("/channel/document",interval);
+        task.parameter("creator", creator);
+        task.parameter("channel", channel);
+        task.parameter("docid", docid);
+        task.parameter("sender", securitySession.principal());
         queue.append(task);
     }
 
