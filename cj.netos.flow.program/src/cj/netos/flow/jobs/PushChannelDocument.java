@@ -11,6 +11,7 @@ import cj.ultimate.gson2.com.google.gson.Gson;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @CjService(name = "/channel/document")
@@ -37,6 +38,12 @@ public class PushChannelDocument implements IFlowJob {
         frame.parameter("channel", channel);
         frame.parameter("creator",creator);
         frame.head("sender", sender);
+
+        List<String> sendedPerson = new ArrayList<>();
+        //先推送给创建者
+        broadcastToCreator(broadcast, frame.copy(), creator,  e.interval());
+        sendedPerson.add(creator);
+
         long limit = 100;
         long skip = 0;
         while (true) {
@@ -46,8 +53,12 @@ public class PushChannelDocument implements IFlowJob {
             }
             skip += outputPersons.size();
             for (String person : outputPersons) {
+                if (sendedPerson.contains(person)) {
+                    continue;
+                }
                 frame.head("to-person", person);
                 broadcast.broadcast(frame.copy());
+                sendedPerson.add(person);
                 if (e.interval() > 0) {
                     try {
                         Thread.sleep(e.interval());
@@ -58,5 +69,18 @@ public class PushChannelDocument implements IFlowJob {
             }
         }
         frame.dispose();
+        sendedPerson.clear();
+    }
+
+    private void broadcastToCreator(INetworkBroadcast broadcast, NetworkFrame frame, String creator, long interval) throws CircuitException {
+        frame.head("to-person", creator);
+        broadcast.broadcast(frame);
+        if (interval > 0) {
+            try {
+                Thread.sleep(interval);
+            } catch (InterruptedException ex) {
+                CJSystem.logging().warn(getClass(), ex);
+            }
+        }
     }
 }
