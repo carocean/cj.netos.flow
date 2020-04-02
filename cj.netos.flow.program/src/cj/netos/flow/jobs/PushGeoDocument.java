@@ -22,13 +22,12 @@ public class PushGeoDocument implements IFlowJob {
 
     @Override
     public void flow(EventTask e, INetworkBroadcast broadcast) throws CircuitException {
-        String creator = (String) e.parameter("creator");
         String category = (String) e.parameter("category");
         String receptor = (String) e.parameter("receptor");
         String docid = (String) e.parameter("docid");
         String sender = (String) e.parameter("sender");
 
-        GeoDocument doc = this.receptor.getDocument(category, receptor,creator, docid);
+        GeoDocument doc = this.receptor.getDocument(category, receptor, docid);
         if (doc == null) {
             CJSystem.logging().warn(getClass(), String.format("文档不存在:%s/%s", receptor, docid));
             return;
@@ -36,6 +35,7 @@ public class PushGeoDocument implements IFlowJob {
         ByteBuf bb = Unpooled.buffer();
         bb.writeBytes(new Gson().toJson(doc).getBytes());
         NetworkFrame frame = new NetworkFrame("pushDocument /geosphere/receptor gbera/1.0", bb);
+        String creator=doc.getCreator();
         frame.parameter("docid", docid);
         frame.parameter("category", category);
         frame.parameter("receptor", receptor);

@@ -37,14 +37,13 @@ public class DefaultReceptor implements IGeoReceptor {
     }
 
     @Override
-    public GeoDocument getDocument(String category, String receptor,String creator, String docid) {
-        String cjql = String.format("select {'tuple':'*'}.limit(1) from tuple ?(colname) ?(clazz) where {'tuple.receptor':'?(receptor)','tuple.id':'?(docid)','tuple.creator':'?(creator)'}");
+    public GeoDocument getDocument(String category, String receptor, String docid) {
+        String cjql = String.format("select {'tuple':'*'}.limit(1) from tuple ?(colname) ?(clazz) where {'tuple.receptor':'?(receptor)','tuple.id':'?(docid)'}");
         IQuery<GeoDocument> query = home.createQuery(cjql);
         query.setParameter("colname", _getDocumentColName(category));
         query.setParameter("clazz", GeoDocument.class.getName());
         query.setParameter("receptor", receptor);
         query.setParameter("docid", docid);
-        query.setParameter("creator",creator);
         IDocument<GeoDocument> doc = query.getSingleResult();
         if (doc == null) {
             return null;

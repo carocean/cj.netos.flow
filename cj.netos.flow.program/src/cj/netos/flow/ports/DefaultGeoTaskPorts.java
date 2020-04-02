@@ -15,7 +15,6 @@ public class DefaultGeoTaskPorts implements IGeosphereTaskPorts {
     @Override
     public void pushGeoDocument(ISecuritySession securitySession, String category, String receptor, String docid, long interval) throws CircuitException {
         EventTask task = new EventTask("/geosphere/document",interval);
-        task.parameter("creator", securitySession.principal());
         task.parameter("category", category);
         task.parameter("receptor", receptor);
         task.parameter("docid", docid);
@@ -24,21 +23,9 @@ public class DefaultGeoTaskPorts implements IGeosphereTaskPorts {
     }
 
     @Override
-    public void pushGeoDocumentOfPerson(ISecuritySession securitySession, String category, String receptor, String docid, String creator, long interval) throws CircuitException {
-        EventTask task = new EventTask("/geosphere/document",interval);
-        task.parameter("creator", creator);
-        task.parameter("category", category);
-        task.parameter("receptor", receptor);
-        task.parameter("docid", docid);
-        task.parameter("sender", securitySession.principal());
-        queue.append(task);
-    }
-
-    @Override
-    public void pushGeoDocumentLike(ISecuritySession securitySession, String category, String receptor, String docid, String creator, long interval) throws CircuitException {
+    public void pushGeoDocumentLike(ISecuritySession securitySession, String category, String receptor, String docid,  long interval) throws CircuitException {
         EventTask task = new EventTask("/geosphere/document/like",interval);
         task.parameter("liker", securitySession.principal());
-        task.parameter("creator", creator);
         task.parameter("category", category);
         task.parameter("receptor", receptor);
         task.parameter("docid", docid);
@@ -46,10 +33,9 @@ public class DefaultGeoTaskPorts implements IGeosphereTaskPorts {
     }
 
     @Override
-    public void pushGeoDocumentUnlike(ISecuritySession securitySession, String category, String receptor, String docid, String creator, long interval) throws CircuitException {
+    public void pushGeoDocumentUnlike(ISecuritySession securitySession, String category, String receptor, String docid,long interval) throws CircuitException {
         EventTask task = new EventTask("/geosphere/document/unlike",interval);
         task.parameter("unliker", securitySession.principal());
-        task.parameter("creator", creator);
         task.parameter("category", category);
         task.parameter("receptor", receptor);
         task.parameter("docid", docid);
@@ -57,10 +43,9 @@ public class DefaultGeoTaskPorts implements IGeosphereTaskPorts {
     }
 
     @Override
-    public void pushGeoDocumentComment(ISecuritySession securitySession, String category, String receptor, String docid, String creator, String commentid, String comments, long interval) throws CircuitException {
+    public void pushGeoDocumentComment(ISecuritySession securitySession, String category, String receptor, String docid,  String commentid, String comments, long interval) throws CircuitException {
         EventTask task = new EventTask("/geosphere/document/comment",interval);
         task.parameter("commenter", securitySession.principal());
-        task.parameter("creator", creator);
         task.parameter("category", category);
         task.parameter("receptor", receptor);
         task.parameter("docid", docid);
@@ -70,10 +55,9 @@ public class DefaultGeoTaskPorts implements IGeosphereTaskPorts {
     }
 
     @Override
-    public void pushGeoDocumentUncomment(ISecuritySession securitySession, String category, String receptor, String docid, String creator, String commentid, long interval) throws CircuitException {
+    public void pushGeoDocumentUncomment(ISecuritySession securitySession, String category, String receptor, String docid,  String commentid, long interval) throws CircuitException {
         EventTask task = new EventTask("/geosphere/document/uncomment",interval);
         task.parameter("uncommenter", securitySession.principal());
-        task.parameter("creator", creator);
         task.parameter("category", category);
         task.parameter("receptor", receptor);
         task.parameter("docid", docid);
