@@ -18,6 +18,7 @@ sourceSets {
 
 dependencies {
     compile group: 'cj.netos.openport', name: 'cj.studio.openport', version: ref_cj_studio_openport_version
+    compile group: 'org.mongodb', name: 'mongodb-driver', version: '3.12.1'
 }
 
  task releaseToProgram(type: Copy) {
