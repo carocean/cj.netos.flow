@@ -14,9 +14,9 @@ public class DefaultIChatroomTaskPorts implements IChatroomTaskPorts {
     ITaskQueue queue;
 
     @Override
-    public void pushMessage(ISecuritySession securitySession, String room, String msgid, String contentType, String content, long interval) throws CircuitException {
+    public void pushMessage(ISecuritySession securitySession,String creator, String room, String msgid, String contentType, String content, long interval) throws CircuitException {
         EventTask task = new EventTask("/chat/message", interval);
-        task.parameter("creator", securitySession.principal());
+        task.parameter("creator", creator);
         task.parameter("room", room);
         task.parameter("msgid", msgid);
         task.parameter("contentType", contentType);

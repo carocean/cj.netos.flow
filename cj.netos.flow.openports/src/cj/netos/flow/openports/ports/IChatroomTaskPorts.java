@@ -13,6 +13,8 @@ public interface IChatroomTaskPorts extends IOpenportService {
     @CjOpenport(usage = "推文.当前令牌持有者要推送指定的文档，该文档必须是持有者发布的文档")
     void pushMessage(
             ISecuritySession securitySession,
+            @CjOpenportParameter(usage = "聊天室创建者", name = "creator")
+                    String creator,
             @CjOpenportParameter(usage = "聊天室", name = "room")
                     String room,
             @CjOpenportParameter(usage = "消息标识", name = "msgid")
