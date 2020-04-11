@@ -27,11 +27,12 @@ public class PushChatMessage implements IFlowJob {
         String msgid = (String) e.parameter("msgid");
         String contentType = (String) e.parameter("contentType");
         String content = (String) e.parameter("content");
-        String msgcreator = (String) e.parameter("creator");
+        String roomcreator = (String) e.parameter("creator");
+        String sender = (String) e.parameter("sender");
 
-        Chatroom chatroom = this.chatroom.getRoom(msgcreator, room);
+        Chatroom chatroom = this.chatroom.getRoom(roomcreator, room);
         if (chatroom == null) {
-            CJSystem.logging().warn(getClass(), String.format("聊天室不存在:%s/%s", msgcreator, room));
+            CJSystem.logging().warn(getClass(), String.format("聊天室不存在:%s/%s", roomcreator, room));
             return;
         }
 
@@ -39,9 +40,11 @@ public class PushChatMessage implements IFlowJob {
         bb.writeBytes(content.getBytes());
         NetworkFrame frame = new NetworkFrame("pushMessage /chat/room/message gbera/1.0", bb);
         frame.parameter("room", room);
+        frame.parameter("roomCreator", roomcreator);
         frame.parameter("contentType", contentType);
         frame.parameter("msgid", msgid);
-        frame.head("sender", msgcreator);
+        frame.parameter("ctime", System.currentTimeMillis()+"");
+        frame.head("sender", sender);
 
         List<String> sendedPersons = new ArrayList<>();
 
