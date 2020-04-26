@@ -163,12 +163,14 @@ public class DefaultReceptor implements IGeoReceptor {
     public List<String> pageReceptorFans(String category, String receptor, long limit, long skip) {
         GeoReceptor geoReceptor = getReceptor(category, receptor);
 
-        String cjql = "select {'tuple':'*'} from tuple ?(colname) ?(clazz) where {'tuple.category':'?(category)','tuple.receptor':'?(receptor)'}";
+        String cjql = "select {'tuple':'*'}.limit(?(limit)).skip(?(skip)) from tuple ?(colname) ?(clazz) where {'tuple.category':'?(category)','tuple.receptor':'?(receptor)'}";
         IQuery<GeoFollow> query = home.createQuery(cjql);
         query.setParameter("colname", _getFollowColName(geoReceptor.getCategory()));
         query.setParameter("clazz", GeoFollow.class.getName());
         query.setParameter("category", geoReceptor.getCategory());
         query.setParameter("receptor", geoReceptor.getId());
+        query.setParameter("limit", limit+"");
+        query.setParameter("skip",skip+"");
         List<IDocument<GeoFollow>> docs = query.getResultList();
         List<String> ids = new ArrayList<>();
         Map<String, GeoFollow> follows = new HashMap<>();
@@ -178,7 +180,8 @@ public class DefaultReceptor implements IGeoReceptor {
         }
 
         LatLng latLng = geoReceptor.getLocation();
-        double radius = geoReceptor.getRadius();
+        //由于粉丝不在感知器半径内，也能收到消息，所以设为最大公里数求粉丝
+        double radius = /*geoReceptor.getRadius()*/Long.MAX_VALUE;
         //查询这些用户的mobiles分类下的感知器，并以此作为远近距离排序
         //distanceField:"distance" 距离字段别称
         //"distanceMultiplier": 0.001,
@@ -192,7 +195,7 @@ public class DefaultReceptor implements IGeoReceptor {
                 "}" +
                 "}", latLng.toCoordinate(), radius);
         String match = String.format("{'$match':{'tuple.creator':{'$in':%s}}}", new Gson().toJson(ids));
-        AggregateIterable<Document> it = home.aggregate(_getReceptorColName("mobiles"), Arrays.asList(Document.parse(json), Document.parse(match)));
+        AggregateIterable<Document> it = home.aggregate(_getReceptorColName(geoReceptor.getCategory()), Arrays.asList(Document.parse(json), Document.parse(match)));
         ids.clear();
         for (Document doc : it) {
             Map<String, Object> tuple = (Map<String, Object>) doc.get("tuple");

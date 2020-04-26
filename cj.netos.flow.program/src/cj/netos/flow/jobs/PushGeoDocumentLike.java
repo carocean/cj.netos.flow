@@ -20,9 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 @CjService(name = "/geosphere/document/like")
-public class PushGeoDocumentLike implements IFlowJob {
-    @CjServiceRef(refByName = "receptor")
-    IGeoReceptor receptor;
+public class PushGeoDocumentLike extends  PushGeoFlowJobBase {
 
     @Override
     public void flow(EventTask e, INetworkBroadcast broadcast) throws CircuitException {
@@ -46,84 +44,12 @@ public class PushGeoDocumentLike implements IFlowJob {
         frame.parameter("creator",creator);
         frame.head("sender", liker);
 
-        List<String> sendedPersons = new ArrayList<>();
-        //先推送给创建者
-        broadcastToCreator(broadcast, frame.copy(), creator,  e.interval());
-        sendedPersons.add(creator);
-
-        long limit = 100;
-        long skip = 0;
-        while (true) {
-            Map<String, List<String>> outputPersons = this.receptor.searchAroundReceptors(category, receptor,null, limit, skip);
-            if (outputPersons.isEmpty()) {
-                break;
-            }
-            skip += outputPersons.size();
-            Set<String> creators=outputPersons.keySet();
-            for (String person : creators) {
-                if (sendedPersons.contains(person)) {
-                    continue;
-                }
-                List<String> receptorids = outputPersons.get(person);
-                frame.head("to-receptors",new Gson().toJson(receptorids));
-                frame.head("to-person", person);
-                broadcast.broadcast(frame.copy());
-                sendedPersons.add(person);
-                if (e.interval() > 0) {
-                    try {
-                        Thread.sleep(e.interval());
-                    } catch (InterruptedException ex) {
-                        CJSystem.logging().warn(getClass(), ex);
-                    }
-                }
-            }
-        }
-
-        skip=0;
-        while (true) {
-            List<String> outputPersons = this.receptor.pageReceptorFans(category, receptor, limit, skip);
-            if (outputPersons.isEmpty()) {
-                break;
-            }
-            skip += outputPersons.size();
-            for (String person : outputPersons) {
-                if (sendedPersons.contains(person)) {
-                    continue;
-                }
-                List<String> receptorids = new ArrayList<>();
-                receptorids.add(String.format("%s/%s", category, receptor));
-                frame.head("to-receptors", new Gson().toJson(receptorids));
-                frame.head("to-person", person);
-                broadcast.broadcast(frame.copy());
-                sendedPersons.add(person);
-                if (e.interval() > 0) {
-                    try {
-                        Thread.sleep(e.interval());
-                    } catch (InterruptedException ex) {
-                        CJSystem.logging().warn(getClass(), ex);
-                    }
-                }
-            }
-        }
+        Map<String, List<String>> destinations = getDestinations(category, receptor, creator);
+//        CJSystem.logging().warn(getClass(), String.format("推送目标:%s", new Gson().toJson(destinations)));
+        broadcast(broadcast, destinations, frame, e.interval());
 
         frame.dispose();
-        sendedPersons.clear();
+        destinations.clear();
     }
 
-    private void broadcastToCreator(INetworkBroadcast broadcast, NetworkFrame frame, String creator, long interval) throws CircuitException {
-        List<String> receptorids = new ArrayList<>();
-        String category=frame.parameter("category");
-        String receptor=frame.parameter("receptor");
-        receptorids.add(String.format("%s/%s", category, receptor));
-        frame.head("to-receptors", new Gson().toJson(receptorids));
-        frame.head("to-person", creator);
-        broadcast.broadcast(frame);
-        if (interval > 0) {
-            try {
-                Thread.sleep(interval);
-            } catch (InterruptedException ex) {
-                CJSystem.logging().warn(getClass(), ex);
-            }
-        }
-    }
 }

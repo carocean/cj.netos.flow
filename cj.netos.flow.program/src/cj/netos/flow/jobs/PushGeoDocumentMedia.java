@@ -21,14 +21,12 @@ import java.util.Map;
 import java.util.Set;
 
 @CjService(name = "/geosphere/document/media")
-public class PushGeoDocumentMedia implements IFlowJob {
-    @CjServiceRef(refByName = "receptor")
-    IGeoReceptor receptor;
+public class PushGeoDocumentMedia extends PushGeoFlowJobBase {
 
     @Override
     public void flow(EventTask e, INetworkBroadcast broadcast) throws CircuitException {
-        Map<String,Object> media = (Map<String, Object>) e.parameter("media");
-        String category =(String) media.get("category");
+        Map<String, Object> media = (Map<String, Object>) e.parameter("media");
+        String category = (String) media.get("category");
         String receptor = (String) media.get("receptor");
         String docid = (String) media.get("docid");
         String mediacreator = (String) e.parameter("creator");
@@ -41,91 +39,19 @@ public class PushGeoDocumentMedia implements IFlowJob {
         ByteBuf bb = Unpooled.buffer();
         bb.writeBytes(new Gson().toJson(media).getBytes());
         NetworkFrame frame = new NetworkFrame("mediaDocument /geosphere/receptor gbera/1.0", bb);
-        String creator=doc.getCreator();
+        String creator = doc.getCreator();
         frame.parameter("docid", docid);
         frame.parameter("category", category);
         frame.parameter("receptor", receptor);
-        frame.parameter("creator",creator);
+        frame.parameter("creator", creator);
         frame.head("sender", mediacreator);
 
-        List<String> sendedPersons = new ArrayList<>();
-        //先推送给创建者
-        broadcastToCreator(broadcast, frame.copy(), creator,  e.interval());
-        sendedPersons.add(creator);
-
-        long limit = 100;
-        long skip = 0;
-        while (true) {
-            Map<String, List<String>> outputPersons = this.receptor.searchAroundReceptors(category, receptor,null, limit, skip);
-            if (outputPersons.isEmpty()) {
-                break;
-            }
-            skip += outputPersons.size();
-            Set<String> creators=outputPersons.keySet();
-            for (String person : creators) {
-                if (sendedPersons.contains(person)) {
-                    continue;
-                }
-                List<String> receptorids = outputPersons.get(person);
-                frame.head("to-receptors",new Gson().toJson(receptorids));
-                frame.head("to-person", person);
-                broadcast.broadcast(frame.copy());
-                sendedPersons.add(person);
-                if (e.interval() > 0) {
-                    try {
-                        Thread.sleep(e.interval());
-                    } catch (InterruptedException ex) {
-                        CJSystem.logging().warn(getClass(), ex);
-                    }
-                }
-            }
-        }
-
-        skip=0;
-        while (true) {
-            List<String> outputPersons = this.receptor.pageReceptorFans(category, receptor, limit, skip);
-            if (outputPersons.isEmpty()) {
-                break;
-            }
-            skip += outputPersons.size();
-            for (String person : outputPersons) {
-                if (sendedPersons.contains(person)) {
-                    continue;
-                }
-                List<String> receptorids = new ArrayList<>();
-                receptorids.add(String.format("%s/%s", category, receptor));
-                frame.head("to-receptors", new Gson().toJson(receptorids));
-                frame.head("to-person", person);
-                broadcast.broadcast(frame.copy());
-                sendedPersons.add(person);
-                if (e.interval() > 0) {
-                    try {
-                        Thread.sleep(e.interval());
-                    } catch (InterruptedException ex) {
-                        CJSystem.logging().warn(getClass(), ex);
-                    }
-                }
-            }
-        }
+        Map<String, List<String>> destinations = getDestinations(category, receptor, creator);
+//        CJSystem.logging().warn(getClass(), String.format("推送目标:%s", new Gson().toJson(destinations)));
+        broadcast(broadcast, destinations, frame, e.interval());
 
         frame.dispose();
-        sendedPersons.clear();
+        destinations.clear();
     }
 
-    private void broadcastToCreator(INetworkBroadcast broadcast, NetworkFrame frame, String creator, long interval) throws CircuitException {
-        List<String> receptorids = new ArrayList<>();
-        String category=frame.parameter("category");
-        String receptor=frame.parameter("receptor");
-        receptorids.add(String.format("%s/%s", category, receptor));
-        frame.head("to-receptors", new Gson().toJson(receptorids));
-        frame.head("to-person", creator);
-        broadcast.broadcast(frame);
-        if (interval > 0) {
-            try {
-                Thread.sleep(interval);
-            } catch (InterruptedException ex) {
-                CJSystem.logging().warn(getClass(), ex);
-            }
-        }
-    }
 }
