@@ -113,7 +113,7 @@ public class DefaultReceptor implements IGeoReceptor {
     }
 
     @Override
-    public List<String> searchAroundReceptors(String category, String receptor, String geoType, long limit, long skip) {
+    public Map<String, List<String>> searchAroundReceptors(String category, String receptor, String geoType, long limit, long skip) {
         List<GeoCategory> categories = null;
         if (StringUtil.isEmpty(geoType)) {
             categories = listCategory();
@@ -123,14 +123,14 @@ public class DefaultReceptor implements IGeoReceptor {
         GeoReceptor geoReceptor = getReceptor(category, receptor);
         LatLng latLng = geoReceptor.getLocation();
         double radius = geoReceptor.getRadius();
-        List<String> ids = new ArrayList<>();
+        Map<String, List<String>> receptorsOfCreatorMap = new HashMap<>();
         for (GeoCategory cate : categories) {
-            _searchPoiInCategory(latLng, radius, cate, limit, skip, ids);
+            _searchPoiInCategory(latLng, radius, cate, limit, skip, receptorsOfCreatorMap);
         }
-        return ids;
+        return receptorsOfCreatorMap;
     }
 
-    private void _searchPoiInCategory(LatLng location, double radius, GeoCategory category, long limit, long skip, List<String> ids) {
+    private void _searchPoiInCategory(LatLng location, double radius, GeoCategory category, long limit, long skip, Map<String, List<String>> receptorsOfCreatorMap) {
         //distanceField:"distance" 距离字段别称
         //"distanceMultiplier": 0.001,
         //{ $limit : 5 }
@@ -148,10 +148,14 @@ public class DefaultReceptor implements IGeoReceptor {
         for (Document doc : it) {
             Map<String, Object> tuple = (Map<String, Object>) doc.get("tuple");
             String creator = (String) tuple.get("creator");
-            if (ids.contains(creator)) {
-                continue;
+            String id = (String) tuple.get("id");
+            String cate=(String)tuple.get("category");
+            List<String> receptors = receptorsOfCreatorMap.get(creator);
+            if (receptors == null) {
+                receptors = new ArrayList<>();
+                receptorsOfCreatorMap.put(creator, receptors);
             }
-            ids.add(creator);
+            receptors.add(String.format("%s/%s",cate,id));
         }
     }
 

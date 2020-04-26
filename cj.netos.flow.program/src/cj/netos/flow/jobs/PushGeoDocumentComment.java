@@ -14,10 +14,7 @@ import cj.ultimate.gson2.com.google.gson.Gson;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @CjService(name = "/geosphere/document/comment")
 public class PushGeoDocumentComment implements IFlowJob {
@@ -45,31 +42,34 @@ public class PushGeoDocumentComment implements IFlowJob {
 
         bb.writeBytes(new Gson().toJson(map).getBytes());
         NetworkFrame frame = new NetworkFrame("commentDocument /geosphere/receptor gbera/1.0", bb);
-        String creator=doc.getCreator();
+        String creator = doc.getCreator();
         frame.parameter("docid", docid);
         frame.parameter("category", category);
         frame.parameter("receptor", receptor);
-        frame.parameter("creator",creator);
+        frame.parameter("creator", creator);
         frame.parameter("commentid", commentid);
         frame.head("sender", commenter);
 
         List<String> sendedPersons = new ArrayList<>();
         //先推送给创建者
-        broadcastToCreator(broadcast, frame.copy(), creator,  e.interval());
+        broadcastToCreator(broadcast, frame.copy(), creator, e.interval());
         sendedPersons.add(creator);
 
         long limit = 100;
         long skip = 0;
         while (true) {
-            List<String> outputPersons = this.receptor.searchAroundReceptors(category, receptor,"mobiles", limit, skip);
+            Map<String, List<String>> outputPersons = this.receptor.searchAroundReceptors(category, receptor, null, limit, skip);
             if (outputPersons.isEmpty()) {
                 break;
             }
             skip += outputPersons.size();
-            for (String person : outputPersons) {
+            Set<String> creators = outputPersons.keySet();
+            for (String person : creators) {
                 if (sendedPersons.contains(person)) {
                     continue;
                 }
+                List<String> receptorids = outputPersons.get(person);
+                frame.head("to-receptors", new Gson().toJson(receptorids));
                 frame.head("to-person", person);
                 broadcast.broadcast(frame.copy());
                 sendedPersons.add(person);
@@ -83,7 +83,7 @@ public class PushGeoDocumentComment implements IFlowJob {
             }
         }
 
-        skip=0;
+        skip = 0;
         while (true) {
             List<String> outputPersons = this.receptor.pageReceptorFans(category, receptor, limit, skip);
             if (outputPersons.isEmpty()) {
@@ -94,6 +94,9 @@ public class PushGeoDocumentComment implements IFlowJob {
                 if (sendedPersons.contains(person)) {
                     continue;
                 }
+                List<String> receptorids = new ArrayList<>();
+                receptorids.add(String.format("%s/%s", category, receptor));
+                frame.head("to-receptors", new Gson().toJson(receptorids));
                 frame.head("to-person", person);
                 broadcast.broadcast(frame.copy());
                 sendedPersons.add(person);
@@ -112,6 +115,11 @@ public class PushGeoDocumentComment implements IFlowJob {
     }
 
     private void broadcastToCreator(INetworkBroadcast broadcast, NetworkFrame frame, String creator, long interval) throws CircuitException {
+        List<String> receptorids = new ArrayList<>();
+        String category=frame.parameter("category");
+        String receptor=frame.parameter("receptor");
+        receptorids.add(String.format("%s/%s", category, receptor));
+        frame.head("to-receptors", new Gson().toJson(receptorids));
         frame.head("to-person", creator);
         broadcast.broadcast(frame);
         if (interval > 0) {
